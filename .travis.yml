@@ -1,0 +1,15 @@
+language: python
+
+branches:
+  only:
+    - "dev"
+    - "master"
+
+python:
+  - "3.6"
+
+install:
+  - "pip install -r req.txt"
+
+notifications:
+  email: false
