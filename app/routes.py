@@ -4,42 +4,6 @@ from flask import jsonify, request
 
 hello_world_data = {'data' : 'HELLO WORLD!'}
 
-mock_points = [
-    {
-        'id' : 0,
-        'location' : {
-            'lat' : 0.00000,
-            'lon' : 0.00000
-        },
-        'top' :'lorem ipsum dolor sit amet'
-    },
-    {
-        'id' : 1,
-        'location' : {
-            'lat' : 1.00000,
-            'lon' : 1.00000
-        },
-        'top' :'lorem ipsum dolor sit amet'
-    },
-    {
-        'id' : 2,
-        'location' : {
-            'lat' : 2.00000,
-            'lon' : 2.00000
-        },
-        'top' :'lorem ipsum dolor sit amet'
-    }
-]
-
-mock_event = {
-    'id' : 0,
-    'points' : mock_points,
-    'start_id' : 0,
-    'end_id' : 2,
-    'dist' : 500,
-    'avg_time' : 100
-}
-
 @app.route('/')
 def hello_world():
     return jsonify(hello_world_data)
