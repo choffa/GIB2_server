@@ -1,16 +1,14 @@
 from app import app
 from flask import jsonify, request
-
+from data import mock_data as md
 
 hello_world_data = {'data' : 'HELLO WORLD!'}
+string_list = ["hello", "world", "plzzzz"]
 
-@app.route('/')
-def hello_world():
-    return jsonify(hello_world_data)
-
-@app.route('/api/points/<id>', methods=['GET'])
-def get_points(id):
-    return jsonify(mock_points[int(id)])
+# Is this strictly necessary?
+@app.route('/api/events/<event_id>/points', methods=['GET'])
+def get_points(event_id):
+    return None
 
 
 @app.route('/api/events', methods=['POST'])
@@ -19,28 +17,38 @@ def set_event():
 
 @app.route('/api/events/nearby', methods=['GET'])
 def get_nearby_events():
+    # For now this just returns all of the mock events
+    return md.get_events()
+
+@app.route('/api/events/<event_id>', methods=['GET'])
+def get_event_by_id(event_id):
+    # For now this returns one event with the given id
+    # The event is the same for all ids
+    return md.get_event(event_id=event_id)
+
+@app.route('/api/events/<event_id>', methods=['POST'])
+def update_event(event_id):
     return None
 
-@app.route('/api/events/<id>', methods=['GET'])
-def get_event_by_id(id):
-    return jsonify(mock_event)
-
-@app.route('/api/events/<id>', methods=['POST'])
-def update_event(id):
-    return None
-
-@app.route('/api/events/<id>/points', methods=['POST'])
-def set_points(id):
+@app.route('/api/events/<event_id>/points', methods=['POST'])
+def set_points(event_id):
     return None
 
 
-# @app.route('/users/<id>')
-# def user(id):
-#     return '<h1>' + str(id) + '</h1>'
 
-# @app.route('/test')
-# def test():
-#     a = {}
-#     a['aa'] = request.args.get('aa')
-#     a['bb'] = request.args.get('bb')
-#     return jsonify(a)
+# The following routes are test endpoints!!!
+@app.route('/api/test/point/<pid>')
+def send_test_point(pid):
+    return md.get_point(pid)
+
+@app.route('/api/test/event')
+def send_test_event():
+    return md.get_event()
+
+@app.route('/api/test/events')
+def send_test_events():
+    return md.get_events()
+
+@app.route('/')
+def hello_world():
+    return jsonify(string_list)

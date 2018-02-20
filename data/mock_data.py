@@ -1,7 +1,7 @@
 import geojson
 from geojson import Point, Feature
 from .data import Event
-from flask import jsonify
+
 
 def get_event(event_id=100):
     points = [Point((63.420334, 10.402592)), Point((63.418370, 10.406905)), Point((63.409948, 10.409640))]
@@ -32,6 +32,15 @@ def get_events():
 def test():
     points = [Point((63.420334, 10.402592)), Point((63.418370, 10.406905)), Point((63.409948, 10.409640))]
     return geojson.dumps(points)
+
+def get_point(pid):
+    f = Feature(pid, Point((63.420334, 10.402592)))
+    return geojson.dumps(f)
+
+
+def add_event(request):
+    pass 
+
 
 
 
