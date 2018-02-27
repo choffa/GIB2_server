@@ -41,13 +41,25 @@ def set_points(event_id):
 def send_test_point(pid):
     return md.get_point(pid)
 
-@app.route('/api/test/event')
-def send_test_event():
-    return md.get_event()
+@app.route('/api/test/event/<eid>')
+def send_test_event(eid):
+    return md.get_event(eid)
 
 @app.route('/api/test/events')
 def send_test_events():
     return md.get_events()
+
+@app.route('/api/test/point', methods=['POST'])
+def recieve_test_point():
+    json = request.get_json()
+    # md.parse_point(json)
+    return jsonify(json)
+
+@app.route('/api/test/event', methods=['POST'])
+def recieve_test_event():
+    json = request.get_json()
+    # md.parse_event(json)
+    return jsonify(json)
 
 @app.route('/')
 def hello_world():

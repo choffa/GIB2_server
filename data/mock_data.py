@@ -2,6 +2,8 @@ import geojson
 from geojson import Point, Feature
 from .data import Event
 
+points = []
+events = []
 
 def get_event(event_id=100):
     points = [Point((63.420334, 10.402592)), Point((63.418370, 10.406905)), Point((63.409948, 10.409640))]
@@ -37,6 +39,17 @@ def get_point(pid):
     f = Feature(pid, Point((63.420334, 10.402592)))
     return geojson.dumps(f)
 
+def parse_point(json):
+    point = geojson.load(json)
+    print('POINT IS OF INSTANCE: ' + type(point))
+    points.append(point)
+    print(points)
+
+def parse_event(json):
+    event = geojson.load(json)
+    print('EVENT IS OF INSTANCE: ' + type(event))
+    events.append(event)
+    print(events)
 
 def add_event(request):
     pass 
