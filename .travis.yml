@@ -1,0 +1,18 @@
+language: python
+
+branches:
+  only:
+    - "dev"
+    - "master"
+
+python:
+  - "3.6"
+
+install:
+  - "pip install -r requirements.txt"
+  
+script:
+  - "python --version"
+
+notifications:
+  email: false
