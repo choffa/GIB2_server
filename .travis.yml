@@ -9,7 +9,7 @@ python:
   - "3.6"
 
 install:
-  - "pip install -r req.txt"
+  - "pip install -r requirements.txt"
 
 notifications:
   email: false
