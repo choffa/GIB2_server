@@ -8,10 +8,10 @@ class Event(db.Model):
     eid = db.Column(db.Integer, primary_key=True)
     points = db.relationship('Point')
 
-    def __init__(self, event_id, *points, **props):
-        self.eid = int(event_id)
-        self.props = props
-        self.points = [p for p in points]
+    # def __init__(self, event_id, *points, **props):
+    #     self.eid = int(event_id)
+    #     self.props = props
+    #     self.points = [p for p in points]
 
     def __repr__(self):
         return '{}-{}'.format(self.eid, self.points)
@@ -30,18 +30,18 @@ class Point(db.Model):
     __tablename__ = 'points'
     pid = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
-    prop = db.relationship('Prop')
+    prop = db.relationship('PointProp')
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
     @property
     def __geo_interface__(self):
-        return {'type': 'Point', 'coordinates': self.point}
+        return {'type': 'Point', 'coordinates': self.point, 'properties': self.prop}
 
     def __repr__(self):
         return '{}-{}-{}'.format(self.pid, self.eid, self.point)
 
-class Prop(db.Model):
-    __tablename__ = 'properties'
+class PointProp(db.Model):
+    __tablename__ = 'point_properties'
     prid = db.Column(db.Integer, primary_key=True)
     pid = db.Column(db.Integer, db.ForeignKey('points.pid'))
     prop_name = db.Column(db.String)
@@ -56,3 +56,20 @@ class Prop(db.Model):
     
     def __repr__(self):
         return '{}-{}-{}-{}'.format(self.prid, self.pid, self.prop_name, self.prop)
+
+class EventProp(db.Model):
+     __tablename__ = 'event_properties'
+    prid = db.Column(db.Integer, primary_key=True)
+    eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
+    prop_name = db.Column(db.String)
+    prop = db.Column(db.String)
+
+    @property
+    def __geo_interface__(self):
+        geo = {}
+        for i in range(prop):
+            geo[self.prop_name] = self.prop
+        return geo
+    
+    def __repr__(self):
+        return '{}-{}-{}-{}'.format(self.prid, self.eid, self.prop_name, self.prop)
