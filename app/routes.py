@@ -5,11 +5,6 @@ from data import mock_data as md
 hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
-# Is this strictly necessary?
-@app.route('/api/events/<event_id>/points', methods=['GET'])
-def get_points(event_id):
-    return None
-
 
 @app.route('/api/events', methods=['POST'])
 def set_event():
@@ -32,6 +27,15 @@ def update_event(event_id):
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
 def set_points(event_id):
+    return None
+
+@app.route('/api/points/nearby', methods=['GET'])
+def get_nearby_points():
+    # For now this just returns all of the mock events
+    return None
+
+@app.route('/api/points', methods=['POST'])
+def set_points():
     return None
 
 
@@ -64,3 +68,4 @@ def recieve_test_event():
 @app.route('/')
 def hello_world():
     return jsonify(string_list)
+
