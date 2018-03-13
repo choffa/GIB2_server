@@ -58,7 +58,7 @@ class PointProp(db.Model):
         return '{}-{}-{}-{}'.format(self.prid, self.pid, self.prop_name, self.prop)
 
 class EventProp(db.Model):
-     __tablename__ = 'event_properties'
+    __tablename__ = 'event_properties'
     prid = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
     prop_name = db.Column(db.String)
