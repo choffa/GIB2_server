@@ -1,6 +1,9 @@
-from app import app
+from app import app, db
 from flask import jsonify, request
-from data import mock_data as md
+from data.data import Event, Point, PointProp, EventProp
+from json import dumps as jdumps
+from geojson import loads as gloads
+from shapely.geometry import shape
 
 hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
@@ -57,9 +60,28 @@ def recieve_test_point():
 
 @app.route('/api/test/event', methods=['POST'])
 def recieve_test_event():
-    json = request.get_json()
-    # md.parse_event(json)
-    return jsonify(json)
+    rjson = request.get_json()
+    features = rjson['features']
+    plist = []
+    for f in features:
+        geo = f['geometry']
+        props = f['properties']
+        proplist = []
+        for key, value in props.items():
+            proplist.append(PointProp(prop_name=key, prop=value))
+        geo = jdumps(geo)
+        geo = gloads(geo)
+        point = shape(geo)
+        wkt = 'SRID=4326;' + point.wkt
+        plist.append(Point(point=wkt, props=proplist))
+    e = Event(points=plist)
+    db.session.add(e)
+    db.session.flush()
+    db.session.commit()
+    
+    # with open('test.json', 'w') as f:
+    #     json.dump(rjson, f)
+    return jsonify(rjson)
 
 @app.route('/')
 def hello_world():

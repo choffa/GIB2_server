@@ -30,7 +30,7 @@ class Point(db.Model):
     __tablename__ = 'points'
     pid = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
-    prop = db.relationship('PointProp')
+    props = db.relationship('PointProp')
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
     @property
@@ -69,7 +69,7 @@ class EventProp(db.Model):
         geo = {}
         for i in range(prop):
             geo[self.prop_name] = self.prop
-        return geo
+        return {geo}
     
     def __repr__(self):
         return '{}-{}-{}-{}'.format(self.prid, self.eid, self.prop_name, self.prop)
