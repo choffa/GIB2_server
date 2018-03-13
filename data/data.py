@@ -6,7 +6,6 @@ from shapely.wkb import loads
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
-    #features = db.Column()
     points = db.relationship('Point')
 
     def __init__(self, event_id, *points, **props):
@@ -31,6 +30,7 @@ class Point(db.Model):
     __tablename__ = 'points'
     pid = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
+    prop = db.relationship('Prop')
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
     @property
@@ -39,3 +39,20 @@ class Point(db.Model):
 
     def __repr__(self):
         return '{}-{}-{}'.format(self.pid, self.eid, self.point)
+
+class Prop(db.Model):
+    __tablename__ = 'properties'
+    prid = db.Column(db.Integer, primary_key=True)
+    pid = db.Column(db.Integer, db.ForeignKey('points.pid'))
+    prop_name = db.Column(db.String)
+    prop = db.Column(db.String)
+
+    @property
+    def __geo_interface__(self):
+        geo = {}
+        for i in range(prop):
+            geo[self.prop_name] = self.prop
+        return geo
+    
+    def __repr__(self):
+        return '{}-{}-{}-{}'.format(self.prid, self.pid, self.prop_name, self.prop)
