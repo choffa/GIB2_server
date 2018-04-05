@@ -10,7 +10,6 @@ association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.In
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
-    start_point = db.relationship('Point')
     points = db.relationship('Point', secondary=association_table)
     props = db.relationship('EventProp')
 

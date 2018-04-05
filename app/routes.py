@@ -15,10 +15,10 @@ def set_event():
     features = rjson['features']
     plist = []
     for f in features:
-        geo = f['geometry']
-        if geo['id'] > 0:
-            plist.append(Point.query.filter(Point.pid == geo['id']).first())
+        if f['id'] > 0:
+            plist.append(Point.query.filter(Point.pid == f['id']).first())
         else:
+            geo = f['geometry']
             props = f['properties']
             proplist = []
             for key, value in props.items():
@@ -49,6 +49,21 @@ def get_nearby_events():
     d = '['+d+']'
     return d
 
+@app.route('/api/points', methods=['PUT', 'POST'])
+def points():
+    r = request.get_json()
+    if request.method == 'POST':
+        set_point(r)
+    elif request.method == 'PUT':
+        update_point(r)
+
+def set_points(req):
+    pass
+
+def update_point(req):
+    pass
+
+
 @app.route('/api/events/<event_id>', methods=['GET'])
 def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
@@ -56,22 +71,21 @@ def get_event_by_id(event_id):
 
 @app.route('/api/events/<event_id>/properties', methods=['PUT'])
 def update_event(event_id):
-    r = request.geo_json()
-    eid = r['id']
-    event = Event.query.filter(Event.eid == eid).first()
-    if event not None:
-        EventProp.query.filter(EventProp.eid == eid).delete()
+    r = request.get_json()
+    print(r)
+    event = Event.query.filter(Event.eid == event_id).first()
+    if event is not None:
+        EventProp.query.filter(EventProp.eid == event_id).delete()
         proplist = []
         for key, value in r.items():
             prop = EventProp(prop_name=key, prop=value)
             proplist.append(prop)
-        event.props = plist
-    db.session.flush()
-    db.session.commit()
+        event.props = proplist
+        db.session.flush()
+        db.session.commit()
     else:
         abort(400)
-
-
+    return gdumps(event)
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
 def set_points(event_id):
