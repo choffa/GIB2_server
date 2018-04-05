@@ -16,15 +16,18 @@ def set_event():
     plist = []
     for f in features:
         geo = f['geometry']
-        props = f['properties']
-        proplist = []
-        for key, value in props.items():
-            proplist.append(PointProp(prop_name=key, prop=value))
-        geo = jdumps(geo)
-        geo = gloads(geo)
-        point = shape(geo)
-        wkt = 'SRID=4326;' + point.wkt
-        plist.append(Point(point=wkt, props=proplist))
+        if geo['id'] > 0:
+            plist.append(Point.query.filter(Point.pid == geo['id']).first())
+        else:
+            props = f['properties']
+            proplist = []
+            for key, value in props.items():
+                proplist.append(PointProp(prop_name=key, prop=value))
+            geo = jdumps(geo)
+            geo = gloads(geo)
+            point = shape(geo)
+            wkt = 'SRID=4326;' + point.wkt
+            plist.append(Point(point=wkt, props=proplist))
     
     props = rjson['properties']
     proplist = []
@@ -51,13 +54,20 @@ def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
     return gdumps(e)
 
-@app.route('/api/events/<event_id>/properties', methods=['POST'])
+@app.route('/api/events/<event_id>/properties', methods=['PUT'])
 def update_event(event_id):
     r = request.geo_json()
     eid = r['id']
     event = Event.query.filter(Event.eid == eid).first()
     if event not None:
-        pass
+        EventProp.query.filter(EventProp.eid == eid).delete()
+        proplist = []
+        for key, value in r.items():
+            prop = EventProp(prop_name=key, prop=value)
+            proplist.append(prop)
+        event.props = plist
+    db.session.flush()
+    db.session.commit()
     else:
         abort(400)
 
