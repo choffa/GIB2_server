@@ -51,9 +51,17 @@ def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
     return gdumps(e)
 
-@app.route('/api/events/<event_id>', methods=['POST'])
+@app.route('/api/events/<event_id>/properties', methods=['POST'])
 def update_event(event_id):
-    return ''
+    r = request.geo_json()
+    eid = r['id']
+    event = Event.query.filter(Event.eid == eid).first()
+    if event not None:
+        pass
+    else:
+        abort(400)
+
+
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
 def set_points(event_id):
@@ -73,7 +81,6 @@ def set_points(event_id):
             abort(400)
     db.session.commit()
     return ''
-
 
 
 # The following routes are test endpoints!!!

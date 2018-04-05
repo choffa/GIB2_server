@@ -3,10 +3,15 @@ from geoalchemy2.types import Geometry
 from geojson import Feature, Point, FeatureCollection
 from shapely.wkb import loads
 
+association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
+    db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
+)
+
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
-    points = db.relationship('Point')
+    start_point = db.relationship('Point')
+    points = db.relationship('Point', secondary=association_table)
     props = db.relationship('EventProp')
 
     # def __init__(self, event_id, *points, **props):
@@ -40,7 +45,6 @@ class Event(db.Model):
 class Point(db.Model):
     __tablename__ = 'points'
     pid = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.Integer, db.ForeignKey('events.eid'))
     props = db.relationship('PointProp')
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
