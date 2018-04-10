@@ -9,7 +9,10 @@ python:
   - "3.6"
 
 install:
-  - "pip install -r req.txt"
+  - "pip install -r requirements.txt"
+  
+script:
+  - "python --version"
 
 notifications:
   email: false
