@@ -1,7 +1,8 @@
 from app import db
 from geoalchemy2.types import Geometry
-from geojson import Feature, Point, FeatureCollection
+from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
+from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
 
 association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -50,6 +51,15 @@ class Point(db.Model):
     def __repr__(self):
         return '{}-{}-{}'.format(self.pid, self.eid, self.point)
 
+    @property
+    def __geo_interface__(self):
+        g = loads(bytes(self.point.data))
+        propdict = {}
+        for prop in self.props:
+            propdict[prop.prop_name] = prop.prop
+        f = Feature(id=self.pid, geometry=g, properties=propdict)
+        return f
+
 class PointProp(db.Model):
     __tablename__ = 'point_properties'
     prid = db.Column(db.Integer, primary_key=True)
@@ -69,3 +79,16 @@ class EventProp(db.Model):
             
     def __repr__(self):
         return '{}-{}-{}-{}'.format(self.prid, self.eid, self.prop_name, self.prop)
+
+class User(db.Model):
+    __tablename__ = 'users'
+    uid = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String)
+    pw_hash = db.Column(db.String)
+
+    def __init__(self, username, password):
+        self.username = username
+        self.pw_hash = gph(password)
+    
+    def check_password(self, candidate):
+        return cph(self.pw_hash, candidate)
