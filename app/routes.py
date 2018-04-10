@@ -1,6 +1,6 @@
-from app import app, db
+from app import app, db, auth
 from flask import jsonify, request, abort
-from data.data import Event, Point, PointProp, EventProp
+from data.data import Event, Point, PointProp, EventProp, User
 from json import dumps as jdumps
 from geojson import loads as gloads, dumps as gdumps
 from shapely.geometry import shape
@@ -16,6 +16,9 @@ def set_event():
     plist = []
     for f in features:
         if f['id'] > 0:
+            point = Point.query.filter(Point.pid == f['id']).first()
+            if point is None:
+                abort(400)
             plist.append(Point.query.filter(Point.pid == f['id']).first())
         else:
             geo = f['geometry']
@@ -50,19 +53,51 @@ def get_nearby_events():
     return d
 
 @app.route('/api/points', methods=['PUT', 'POST'])
+@auth.login_required
 def points():
+    print('Verified?')
     r = request.get_json()
     if request.method == 'POST':
-        set_point(r)
+        return set_points(r)
     elif request.method == 'PUT':
-        update_point(r)
+        return update_point(r)
 
 def set_points(req):
-    pass
+    plist = []
+    for point in req:
+        geom = point['geometry']
+        coords = geom['coordinates']
+        ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
+        props = []
+        for key, value in point['properties'].items():
+            props.append(PointProp(prop_name=key, prop=value))
+        p = Point(point=ewkt, props=props)
+        plist.append(p)
+        db.session.add(p)
+    db.session.flush()
+    db.session.commit()
+    d = ','.join(gdumps(p) for p in plist)
+    d = '[' + d + ']'
+    print(d)
+    return d
 
 def update_point(req):
-    pass
-
+    point = Point.query.filter(Point.pid == req['id']).first()
+    if point is None:
+        abort(400)
+    geom = req['geometry']
+    coords = geom['coordinates']
+    ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')'
+    props = []
+    for key, value in req['properties'].items():
+        props.append(PointProp(prop_name=key, prop=value))
+    for prop in point.props:
+        db.session.delete(prop)
+    point.point = ewkt
+    point.props = props
+    db.session.flush()
+    db.session.commit()
+    return gdumps(point)
 
 @app.route('/api/events/<event_id>', methods=['GET'])
 def get_event_by_id(event_id):
@@ -88,7 +123,7 @@ def update_event(event_id):
     return gdumps(event)
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
-def set_points(event_id):
+def set_points_to_event(event_id):
     r = request.get_json()
     for feature in r:
         geom = feature['geometry']
@@ -105,6 +140,13 @@ def set_points(event_id):
             abort(400)
     db.session.commit()
     return ''
+
+@auth.verify_password
+def verify_password(username, password):
+    user = User.query.filter(User.username == username).first()
+    if not user or not user.check_password(password):
+        return False
+    return True
 
 
 # The following routes are test endpoints!!!
