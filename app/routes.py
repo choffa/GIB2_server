@@ -141,6 +141,20 @@ def set_points_to_event(event_id):
     db.session.commit()
     return ''
 
+@app.route('/api/user', methods=['GET', 'POST'])
+def users():
+    r = request.get_json()
+    username = r['username']
+    password = r['password']
+    if request.method == 'POST':
+        user = User(username, password)
+        db.session.add(user)
+        db.session.flush()
+        db.session.commit()
+        return 'true'
+    elif request.method == 'GET'
+        return str(verify_password(username, password))
+
 @auth.verify_password
 def verify_password(username, password):
     user = User.query.filter(User.username == username).first()
@@ -199,6 +213,6 @@ def verify_password(username, password):
 #     #     json.dump(rjson, f)
 #     return jsonify(rjson)
 
-# @app.route('/')
-# def hello_world():
-#     return jsonify(string_list)
+@app.route('/')
+def hello_world():
+    return jsonify(string_list)
