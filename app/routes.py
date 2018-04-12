@@ -1,6 +1,6 @@
 from app import app, db, auth
 from flask import jsonify, request, abort
-from data.data import Event, Point, PointProp, EventProp, User
+from data.data import *
 from json import dumps as jdumps
 from geojson import loads as gloads, dumps as gdumps
 from shapely.geometry import shape
@@ -141,6 +141,7 @@ def set_points_to_event(event_id):
             db.session.add(p)
             db.session.flush()
         except IntegrityError:
+            db.session.close()
             abort(400)
     db.session.commit()
     return ''
@@ -152,12 +153,28 @@ def users():
     password = r['password']
     if request.method == 'POST':
         user = User(username, password)
-        db.session.add(user)
-        db.session.flush()
-        db.session.commit()
+        try:
+            db.session.add(user)
+            db.session.flush()
+            db.session.commit()
+        except IntegrityError:
+            db.session.close()
+            return 'false'
         return 'true'
     elif request.method == 'GET':
         return str(verify_password(username, password))
+
+@app.route('/api/events/<event_id>/time/<time>', methods=['POST'])
+@auth.login_required
+def post_time(event_id, time):
+    times = time.split(':')
+    if len(times) != 3:
+        abort(400)
+    user_id = User.query.filter(User.username == auth.username()).first().uid
+    t = Time(event_id, user_id, times[0], times[1], times[2])
+    db.session.add(t)
+    db.session.commit()
+    return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
 @auth.verify_password
 def verify_password(username, password):

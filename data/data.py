@@ -85,7 +85,7 @@ class EventProp(db.Model):
 class User(db.Model):
     __tablename__ = 'users'
     uid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String)
+    username = db.Column(db.String, unique=True)
     pw_hash = db.Column(db.String)
 
     def __init__(self, username, password):
@@ -99,11 +99,17 @@ class Time(db.Model):
     __tablename__ = 'time'
     did = db.Column(db.Integer, primary_key=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
+    uid = db.Column(db.Integer, db.ForeignKey('users.uid'))
     seconds = db.Column(db.Integer)
+
+    def __init__(self, eid, uid, hours=0, minutes=0, seconds=0):
+        self.eid = eid
+        self.uid = uid
+        self.seconds = hours*3600 + minutes*60 + seconds
 
     @staticmethod
     def calc_average_time(event_id):
-        seconds = [f.seconds for f in DeltaTimes.query.filter(DeltaTimes.eid == event_id).all()]
+        seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
         return round(sum(seconds)/len(seconds))
 
 class DeltaTime():
