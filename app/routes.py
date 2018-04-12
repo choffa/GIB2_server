@@ -56,7 +56,6 @@ def get_nearby_events():
 @app.route('/api/points', methods=['PUT', 'POST'])
 @auth.login_required
 def points():
-    print('Verified?')
     r = request.get_json()
     if request.method == 'POST':
         return set_points(r)
@@ -79,7 +78,6 @@ def set_points(req):
     db.session.commit()
     d = ','.join(gdumps(p) for p in plist)
     d = '[' + d + ']'
-    print(d)
     return d
 
 def update_point(req):
@@ -110,7 +108,6 @@ def get_event_by_id(event_id):
 @auth.login_required
 def update_event(event_id):
     r = request.get_json()
-    print(r)
     event = Event.query.filter(Event.eid == event_id).first()
     if event is not None:
         EventProp.query.filter(EventProp.eid == event_id).delete()
