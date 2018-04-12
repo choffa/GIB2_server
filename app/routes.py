@@ -141,7 +141,7 @@ def set_points_to_event(event_id):
     db.session.commit()
     return ''
 
-@app.route('/api/user', methods=['GET', 'POST'])
+@app.route('/api/users', methods=['GET', 'POST'])
 def users():
     r = request.get_json()
     username = r['username']
