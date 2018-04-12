@@ -156,7 +156,7 @@ def users():
         db.session.flush()
         db.session.commit()
         return 'true'
-    elif request.method == 'GET'
+    elif request.method == 'GET':
         return str(verify_password(username, password))
 
 @auth.verify_password
