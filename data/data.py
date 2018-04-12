@@ -3,6 +3,7 @@ from geoalchemy2.types import Geometry
 from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
+from datetime import timedelta
 
 association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -39,6 +40,7 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
+        props['avg_time'] = str(DeltaTime(seconds=DeltaTime.calc_average_time(self.eid)))
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -92,3 +94,32 @@ class User(db.Model):
     
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
+
+class Time(db.Model):
+    __tablename__ = 'time'
+    did = db.Column(db.Integer, primary_key=True)
+    eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
+    seconds = db.Column(db.Integer)
+
+    @staticmethod
+    def calc_average_time(event_id):
+        seconds = [f.seconds for f in DeltaTimes.query.filter(DeltaTimes.eid == event_id).all()]
+        return round(sum(seconds)/len(seconds))
+
+class DeltaTime():
+    
+    def __init__(self, hours=0, minutes=0, seconds=0):
+        hours += seconds // 3600
+        seconds = seconds % 3600
+        minutes += seconds // 60
+        seconds = seconds % 60
+
+        hours += minutes // 60
+        minutes = minutes % 60
+
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds = seconds
+    
+    def __repr__(self):
+        return '{:02d}:{:02d}:{:02d}'.format(self.hours, self.minutes, self.seconds)
