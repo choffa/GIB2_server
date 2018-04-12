@@ -45,6 +45,7 @@ def set_event():
     return gdumps(e)
 
 @app.route('/api/events/nearby', methods=['GET'])
+@auth.login_required
 def get_nearby_events():
     # print(request.args)
     events = Event.query.all()
@@ -100,11 +101,13 @@ def update_point(req):
     return gdumps(point)
 
 @app.route('/api/events/<event_id>', methods=['GET'])
+@auth.login_required
 def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
     return gdumps(e)
 
 @app.route('/api/events/<event_id>/properties', methods=['PUT'])
+@auth.login_required
 def update_event(event_id):
     r = request.get_json()
     print(r)
@@ -123,6 +126,7 @@ def update_event(event_id):
     return gdumps(event)
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
+@auth.login_required
 def set_points_to_event(event_id):
     r = request.get_json()
     for feature in r:
