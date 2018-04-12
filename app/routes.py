@@ -199,6 +199,6 @@ def verify_password(username, password):
 #     #     json.dump(rjson, f)
 #     return jsonify(rjson)
 
-# @app.route('/')
-# def hello_world():
-#     return jsonify(string_list)
+@app.route('/')
+def hello_world():
+    return jsonify(string_list)
