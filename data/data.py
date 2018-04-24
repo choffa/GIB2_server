@@ -32,6 +32,12 @@ class Event(db.Model):
     @property
     def __geo_interface__(self):
         features = []
+        g = loads(bytes(start_point.point.data))
+        props = {}
+        for prop in start_point.props:
+            props[prop.prop_name] = prop.prop
+        f = Feature(id=start_point.pid, geometry=g, properties=props)
+        features.append(f)
         for p in self.points:
             g = loads(bytes(p.point.data))
             props = {}

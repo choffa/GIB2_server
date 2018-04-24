@@ -165,7 +165,7 @@ def users():
 @app.route('/api/login', methods=['POST'])
 @auth.login_required
 def login_user():
-    return ''
+    return jsonify(True)
 
 @app.route('/api/events/<event_id>/time/<time>', methods=['POST'])
 @auth.login_required
