@@ -10,7 +10,7 @@ hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
 @app.route('/api/events', methods=['POST'])
-@auth.login_required
+#@auth.login_required
 def set_event():
     rjson = request.get_json()
     features = rjson['features']
@@ -28,11 +28,10 @@ def set_event():
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.commit()
-    
     return gdumps(e)
 
 @app.route('/api/events/nearby', methods=['GET'])
-@auth.login_required
+#@auth.login_required
 def get_nearby_events():
     # print(request.args)
     events = Event.query.all()
@@ -145,6 +144,7 @@ def set_points_to_event(event_id):
     event = Event.query.filter(Event.eid == event_id).first()
     if event in None:
         abort(400)
+    return ''
     
 
 @app.route('/api/users', methods=['POST'])

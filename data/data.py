@@ -32,11 +32,11 @@ class Event(db.Model):
     @property
     def __geo_interface__(self):
         features = []
-        g = loads(bytes(start_point.point.data))
+        g = loads(bytes(self.start_point.point.data))
         props = {}
-        for prop in start_point.props:
+        for prop in self.start_point.props:
             props[prop.prop_name] = prop.prop
-        f = Feature(id=start_point.pid, geometry=g, properties=props)
+        f = Feature(id=self.start_point.pid, geometry=g, properties=props)
         features.append(f)
         for p in self.points:
             g = loads(bytes(p.point.data))
@@ -48,7 +48,7 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = str(DeltaTime(seconds=DeltaTime.calc_average_time(self.eid)))
+        props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -118,6 +118,8 @@ class Time(db.Model):
     @staticmethod
     def calc_average_time(event_id):
         seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
+        if not len(seconds):
+            return 0
         return round(sum(seconds)/len(seconds))
 
 class DeltaTime():
