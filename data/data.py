@@ -3,7 +3,6 @@ from geoalchemy2.types import Geometry
 from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
-from datetime import timedelta
 
 association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -12,8 +11,6 @@ association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.In
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
-    start_point_id = db.Column(db.Integer, db.ForeignKey('points.pid'), nullable=False)
-    start_point = db.relationship('Point')
     points = db.relationship('Point', secondary=association_table)
     props = db.relationship('EventProp')
 
@@ -42,7 +39,6 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = str(DeltaTime(seconds=DeltaTime.calc_average_time(self.eid)))
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -53,7 +49,7 @@ class Point(db.Model):
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
     def __repr__(self):
-        return '{}-{}'.format(self.pid, self.point)
+        return '{}-{}-{}'.format(self.pid, self.eid, self.point)
 
     @property
     def __geo_interface__(self):
@@ -87,7 +83,7 @@ class EventProp(db.Model):
 class User(db.Model):
     __tablename__ = 'users'
     uid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True)
+    username = db.Column(db.String)
     pw_hash = db.Column(db.String)
 
     def __init__(self, username, password):
@@ -96,38 +92,3 @@ class User(db.Model):
     
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
-
-class Time(db.Model):
-    __tablename__ = 'time'
-    did = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
-    uid = db.Column(db.Integer, db.ForeignKey('users.uid'))
-    seconds = db.Column(db.Integer)
-
-    def __init__(self, eid, uid, hours=0, minutes=0, seconds=0):
-        self.eid = eid
-        self.uid = uid
-        self.seconds = hours*3600 + minutes*60 + seconds
-
-    @staticmethod
-    def calc_average_time(event_id):
-        seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
-        return round(sum(seconds)/len(seconds))
-
-class DeltaTime():
-    
-    def __init__(self, hours=0, minutes=0, seconds=0):
-        hours += seconds // 3600
-        seconds = seconds % 3600
-        minutes += seconds // 60
-        seconds = seconds % 60
-
-        hours += minutes // 60
-        minutes = minutes % 60
-
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
-    
-    def __repr__(self):
-        return '{:02d}:{:02d}:{:02d}'.format(self.hours, self.minutes, self.seconds)
