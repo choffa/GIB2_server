@@ -10,6 +10,7 @@ hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
 @app.route('/api/events', methods=['POST'])
+@auth.login_required
 def set_event():
     rjson = request.get_json()
     features = rjson['features']
@@ -40,6 +41,7 @@ def get_nearby_events():
     return d
     
 @app.route('/api/points/nearby', methods=['GET'])
+@auth.login_required
 def get_nearby_points():
     lat = request.args.get('lat')
     lng = request.args.get('lng')
