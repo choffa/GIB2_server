@@ -14,6 +14,7 @@ def set_event():
     rjson = request.get_json()
     features = rjson['features']
     plist = []
+    start_point = None
     for f in features:
         if f['id'] > 0:
             point = Point.query.filter(Point.pid == f['id']).first()
@@ -30,14 +31,17 @@ def set_event():
             geo = gloads(geo)
             point = shape(geo)
             wkt = 'SRID=4326;' + point.wkt
-            plist.append(Point(point=wkt, props=proplist))
+            if start_point:
+                plist.append(Point(point=wkt, props=proplist))
+            else:
+                start_point = Point(point=wkt, props=proplist)
     
     props = rjson['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(EventProp(prop_name=key, prop=value))
 
-    e = Event(points=plist, props=proplist)
+    e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.flush()
     db.session.commit()
@@ -52,6 +56,16 @@ def get_nearby_events():
     d = ','.join(gdumps(e) for e in events)
     d = '['+d+']'
     return d
+    
+@app.route('/api/points/nearby', methods=['GET'])
+@auth.login_required
+def get_nearby_points():
+    lat = request.args.get('lat')
+    lng = request.args.get('lng')
+    dist = request.args.get('dist')
+    if not (lat and lng and dist):
+        abort(400)
+    
 
 @app.route('/api/points', methods=['PUT', 'POST'])
 @auth.login_required
