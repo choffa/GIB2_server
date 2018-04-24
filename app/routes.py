@@ -16,31 +16,14 @@ def set_event():
     plist = []
     start_point = None
     for f in features:
-        if f['id'] > 0:
-            point = Point.query.filter(Point.pid == f['id']).first()
-            if point is None:
-                abort(400)
-            plist.append(Point.query.filter(Point.pid == f['id']).first())
+        if start_point is None:
+            start_point = get_or_make_point(f)
         else:
-            geo = f['geometry']
-            props = f['properties']
-            proplist = []
-            for key, value in props.items():
-                proplist.append(PointProp(prop_name=key, prop=value))
-            geo = jdumps(geo)
-            geo = gloads(geo)
-            point = shape(geo)
-            wkt = 'SRID=4326;' + point.wkt
-            if start_point:
-                plist.append(Point(point=wkt, props=proplist))
-            else:
-                start_point = Point(point=wkt, props=proplist)
-    
+            plist.append(get_or_make_point(f))
     props = rjson['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(EventProp(prop_name=key, prop=value))
-
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.commit()
@@ -57,13 +40,14 @@ def get_nearby_events():
     return d
     
 @app.route('/api/points/nearby', methods=['GET'])
-@auth.login_required
 def get_nearby_points():
     lat = request.args.get('lat')
     lng = request.args.get('lng')
     dist = request.args.get('dist')
     if not (lat and lng and dist):
         abort(400)
+    points = Point.query.all()
+    return '[' + ','.join(gdumps(p) for p in points) + ']'
     
 
 @app.route('/api/points', methods=['PUT', 'POST'])
@@ -77,7 +61,7 @@ def points():
 
 def set_points(req):
     plist = []
-    for point in req:
+    for feature in req:
         geom = point['geometry']
         coords = geom['coordinates']
         ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
@@ -137,42 +121,49 @@ def update_event(event_id):
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
 @auth.login_required
+# This needs to be fixed...
 def set_points_to_event(event_id):
-    r = request.get_json()
-    for feature in r:
-        geom = feature['geometry']
-        coords = geom['coordinates']
-        ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
-        props = []
-        for key, value in feature['properties'].items():
-            props.append(PointProp(prop_name=key, prop=value))
-        p = Point(point=ewkt, eid=event_id, props=props)
-        try:
-            db.session.add(p)
-            db.session.flush()
-        except IntegrityError:
-            db.session.close()
-            abort(400)
-    db.session.commit()
-    return ''
+    #r = request.get_json()
+    #for feature in r:
+    #    geom = feature['geometry']
+    #    coords = geom['coordinates']
+    #    ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
+    #    props = []
+    #    for key, value in feature['properties'].items():
+    #        props.append(PointProp(prop_name=key, prop=value))
+    #    p = Point(point=ewkt, eid=event_id, props=props)
+    #    try:
+    #        db.session.add(p)
+    #        db.session.flush()
+    #    except IntegrityError:
+    #        db.session.close()
+    #        abort(400)
+    #db.session.commit()
+    #return ''
+    event = Event.query.filter(Event.eid == event_id).first()
+    if event in None:
+        abort(400)
+    
 
-@app.route('/api/users', methods=['GET', 'POST'])
+@app.route('/api/users', methods=['POST'])
 def users():
     r = request.get_json()
     username = r['username']
     password = r['password']
-    if request.method == 'POST':
-        user = User(username, password)
-        try:
-            db.session.add(user)
-            db.session.flush()
-            db.session.commit()
-        except IntegrityError:
-            db.session.close()
-            return 'false'
-        return 'true'
-    elif request.method == 'GET':
-        return str(verify_password(username, password))
+    user = User(username, password)
+    try:
+        db.session.add(user)
+        db.session.flush()
+        db.session.commit()
+    except IntegrityError:
+        db.session.close()
+        return 'false'
+    return 'true'
+
+@app.route('/api/login', methods=['POST'])
+@auth.login_required
+def login_user():
+    return ''
 
 @app.route('/api/events/<event_id>/time/<time>', methods=['POST'])
 @auth.login_required
@@ -192,6 +183,22 @@ def verify_password(username, password):
     if not user or not user.check_password(password):
         return False
     return True
+
+def get_or_make_point(feature):
+    pid = feature['id']
+    point = Point.query.filter(Point.pid == pid).first()
+    if point is not None:
+        return point
+    geo = feature['geometry']
+    props = feature['properties']
+    proplist = []
+    for key, value in props.items():
+        proplist.append(PointProp(prop_name=key, prop=value))
+    geo = jdumps(geo)
+    geo = gloads(geo)
+    point = shape(geo)
+    wkt = 'SRID=4326;' + point.wkt
+    return Point(point=wkt, props=proplist)
 
 
 # The following routes are test endpoints!!!
