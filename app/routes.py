@@ -43,7 +43,6 @@ def set_event():
 
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
-    db.session.flush()
     db.session.commit()
     
     return gdumps(e)
