@@ -29,12 +29,6 @@ class Event(db.Model):
     @property
     def __geo_interface__(self):
         features = []
-        g = loads(bytes(self.start_point.point.data))
-        props = {}
-        for prop in self.start_point.props:
-            props[prop.prop_name] = prop.prop
-        f = Feature(id=self.start_point.pid, geometry=g, properties=props)
-        features.append(f)
         for p in self.points:
             g = loads(bytes(p.point.data))
             props = {}
@@ -45,7 +39,6 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -99,40 +92,3 @@ class User(db.Model):
     
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
-
-class Time(db.Model):
-    __tablename__ = 'time'
-    did = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
-    uid = db.Column(db.Integer, db.ForeignKey('users.uid'))
-    seconds = db.Column(db.Integer)
-
-    def __init__(self, eid, uid, hours=0, minutes=0, seconds=0):
-        self.eid = eid
-        self.uid = uid
-        self.seconds = hours*3600 + minutes*60 + seconds
-
-    @staticmethod
-    def calc_average_time(event_id):
-        seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
-        if not len(seconds):
-            return 0
-        return round(sum(seconds)/len(seconds))
-
-class DeltaTime():
-    
-    def __init__(self, hours=0, minutes=0, seconds=0):
-        hours += seconds // 3600
-        seconds = seconds % 3600
-        minutes += seconds // 60
-        seconds = seconds % 60
-
-        hours += minutes // 60
-        minutes = minutes % 60
-
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
-    
-    def __repr__(self):
-        return '{:02d}:{:02d}:{:02d}'.format(self.hours, self.minutes, self.seconds)
