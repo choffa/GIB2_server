@@ -5,6 +5,9 @@ from json import dumps as jdumps
 from geojson import loads as gloads, dumps as gdumps
 from shapely.geometry import shape
 from sqlalchemy.exc import IntegrityError
+from geoalchemy2.functions import ST_Distance
+from geoalchemy2.types import Geography
+from geoalchemy2.elements import WKTElement
 
 hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
@@ -33,11 +36,14 @@ def set_event():
 @app.route('/api/events/nearby', methods=['GET'])
 @auth.login_required
 def get_nearby_events():
-    # print(request.args)
-    events = Event.query.all()
-    d = ','.join(gdumps(e) for e in events)
-    d = '['+d+']'
-    return d
+    lat = request.args.get('lat')
+    lng = request.args.get('lng')
+    dist = request.args.get('dist')
+    if not (lat and lng and dist):
+        abort(400)
+    user_point = WKTElement('POINT({} {})'.format(lat, lng))
+    events = Event.query.filter(ST_Distance(Event.start_point.point, user_point) <= dist).all()
+    return '[' + ','.join(gdumps(e) for e in events) + ']'
 
 @app.route('/api/points/nearby', methods=['GET'])
 @auth.login_required
@@ -47,7 +53,8 @@ def get_nearby_points():
     dist = request.args.get('dist')
     if not (lat and lng and dist):
         abort(400)
-    points = Point.query.all()
+    user_point = WKTElement('POINT({} {})'.format(lat, lng))
+    points = Point.query.filter(ST_Distance(Point.point, user_point) <= dist).all()
     return '[' + ','.join(gdumps(p) for p in points) + ']'
 
 @app.route('/api/points', methods=['PUT', 'POST'])
@@ -64,7 +71,7 @@ def set_points(req):
     for point in req:
         geom = point['geometry']
         coords = geom['coordinates']
-        ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
+        ewkt = 'Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
         props = []
         for key, value in point['properties'].items():
             props.append(PointProp(prop_name=key, prop=value))
@@ -83,7 +90,7 @@ def update_point(req):
         abort(400)
     geom = req['geometry']
     coords = geom['coordinates']
-    ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')'
+    ewkt = 'Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')'
     props = []
     for key, value in req['properties'].items():
         props.append(PointProp(prop_name=key, prop=value))
@@ -125,7 +132,7 @@ def set_points_to_event(event_id):
     #for feature in r:
     #    geom = feature['geometry']
     #    coords = geom['coordinates']
-    #    ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
+    #    ewkt = 'Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
     #    props = []
     #    for key, value in feature['properties'].items():
     #        props.append(PointProp(prop_name=key, prop=value))
@@ -199,5 +206,4 @@ def get_or_make_point(feature):
     geo = jdumps(geo)
     geo = gloads(geo)
     point = shape(geo)
-    wkt = 'SRID=4326;' + point.wkt
-    return Point(point=wkt, props=proplist)
+    return Point(point=point.wkt, props=proplist)
