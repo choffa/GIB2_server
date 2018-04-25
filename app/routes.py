@@ -17,33 +17,17 @@ def set_event():
     plist = []
     start_point = None
     for f in features:
-        if f['id'] > 0:
-            point = Point.query.filter(Point.pid == f['id']).first()
-            if point is None:
-                abort(400)
-            plist.append(Point.query.filter(Point.pid == f['id']).first())
+        if start_point is None:
+            start_point = get_or_make_point(f)
         else:
-            geo = f['geometry']
-            props = f['properties']
-            proplist = []
-            for key, value in props.items():
-                proplist.append(PointProp(prop_name=key, prop=value))
-            geo = jdumps(geo)
-            geo = gloads(geo)
-            point = shape(geo)
-            wkt = 'SRID=4326;' + point.wkt
-            plist.append(Point(point=wkt, props=proplist))
-    
+            plist.append(get_or_make_point(f))
     props = rjson['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(EventProp(prop_name=key, prop=value))
-
-    e = Event(points=plist, props=proplist)
+    e = Event(points=plist, start_point=start_point, props=proplist)
     db.session.add(e)
-    db.session.flush()
     db.session.commit()
-    
     return gdumps(e)
 
 @app.route('/api/events/nearby', methods=['GET'])
@@ -191,6 +175,10 @@ def post_time(event_id, time):
     db.session.commit()
     return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
+@app.route('/')
+def hello_world():
+    return jsonify(string_list)
+
 @auth.verify_password
 def verify_password(username, password):
     user = User.query.filter(User.username == username).first()
@@ -198,57 +186,18 @@ def verify_password(username, password):
         return False
     return True
 
-
-# The following routes are test endpoints!!!
-# @app.route('/api/test/point/<pid>')
-# def send_test_point(pid):
-#     return md.get_point(pid)
-
-# @app.route('/api/test/event/<eid>')
-# def send_test_event(eid):
-#     return md.get_event(eid)
-
-# @app.route('/api/test/events')
-# def send_test_events():
-#     return md.get_events()
-
-# @app.route('/api/test/point', methods=['POST'])
-# def recieve_test_point():
-#     json = request.get_json()
-#     # md.parse_point(json)
-#     return jsonify(json)
-
-# @app.route('/api/test/event', methods=['POST'])
-# def recieve_test_event():
-#     rjson = request.get_json()
-#     features = rjson['features']
-#     plist = []
-#     for f in features:
-#         geo = f['geometry']
-#         props = f['properties']
-#         proplist = []
-#         for key, value in props.items():
-#             proplist.append(PointProp(prop_name=key, prop=value))
-#         geo = jdumps(geo)
-#         geo = gloads(geo)
-#         point = shape(geo)
-#         wkt = 'SRID=4326;' + point.wkt
-#         plist.append(Point(point=wkt, props=proplist))
-    
-#     props = rjson['properties']
-#     proplist = []
-#     for key, value in props.items():
-#         proplist.append(EventProp(prop_name=key, prop=value))
-
-#     e = Event(points=plist, props=proplist)
-#     db.session.add(e)
-#     db.session.flush()
-#     db.session.commit()
-    
-#     # with open('test.json', 'w') as f:
-#     #     json.dump(rjson, f)
-#     return jsonify(rjson)
-
-@app.route('/')
-def hello_world():
-    return jsonify(string_list)
+def get_or_make_point(feature):
+    pid = feature['id']
+    point = Point.query.filter(Point.pid == pid).first()
+    if point is not None:
+        return point
+    geo = feature['geometry']
+    props = feature['properties']
+    proplist = []
+    for key, value in props.items():
+        proplist.append(PointProp(prop_name=key, prop=value))
+    geo = jdumps(geo)
+    geo = gloads(geo)
+    point = shape(geo)
+    wkt = 'SRID=4326;' + point.wkt
+    return Point(point=wkt, props=proplist)
