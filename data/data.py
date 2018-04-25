@@ -3,6 +3,7 @@ from geoalchemy2.types import Geometry
 from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
+from datetime import timedelta
 
 association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -11,6 +12,8 @@ association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.In
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
+    start_point_id = db.Column(db.Integer, db.ForeignKey('points.pid'), nullable=False)
+    start_point = db.relationship('Point')
     points = db.relationship('Point', secondary=association_table)
     props = db.relationship('EventProp')
 
@@ -56,7 +59,7 @@ class Point(db.Model):
     point = db.Column(Geometry(geometry_type='POINT', srid=4326))
 
     def __repr__(self):
-        return '{}-{}-{}'.format(self.pid, self.eid, self.point)
+        return '{}-{}'.format(self.pid, self.point)
 
     @property
     def __geo_interface__(self):
@@ -90,7 +93,7 @@ class EventProp(db.Model):
 class User(db.Model):
     __tablename__ = 'users'
     uid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String)
+    username = db.Column(db.String, unique=True)
     pw_hash = db.Column(db.String)
 
     def __init__(self, username, password):
