@@ -55,7 +55,7 @@ class Point(db.Model):
     point = db.Column(Geography(geometry_type='POINT'))
 
     def __repr__(self):
-        return '{}-{}'.format(self.pid, self.point)
+        return '{}-{}'.format(self.pid, loads(bytes(self.point.data)).wkt)
 
     @property
     def __geo_interface__(self):
