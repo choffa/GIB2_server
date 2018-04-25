@@ -10,11 +10,12 @@ hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
 @app.route('/api/events', methods=['POST'])
-#@auth.login_required
+@auth.login_required
 def set_event():
     rjson = request.get_json()
     features = rjson['features']
     plist = []
+    start_point = None
     for f in features:
         if start_point is None:
             start_point = get_or_make_point(f)
