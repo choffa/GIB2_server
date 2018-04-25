@@ -10,35 +10,51 @@ hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
 @app.route('/api/events', methods=['POST'])
-#@auth.login_required
+@auth.login_required
 def set_event():
     rjson = request.get_json()
     features = rjson['features']
     plist = []
     start_point = None
     for f in features:
-        if start_point is None:
-            start_point = get_or_make_point(f)
+        if f['id'] > 0:
+            point = Point.query.filter(Point.pid == f['id']).first()
+            if point is None:
+                abort(400)
+            plist.append(Point.query.filter(Point.pid == f['id']).first())
         else:
-            plist.append(get_or_make_point(f))
+            geo = f['geometry']
+            props = f['properties']
+            proplist = []
+            for key, value in props.items():
+                proplist.append(PointProp(prop_name=key, prop=value))
+            geo = jdumps(geo)
+            geo = gloads(geo)
+            point = shape(geo)
+            wkt = 'SRID=4326;' + point.wkt
+            plist.append(Point(point=wkt, props=proplist))
+    
     props = rjson['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(EventProp(prop_name=key, prop=value))
-    e = Event(start_point=start_point, points=plist, props=proplist)
+
+    e = Event(points=plist, props=proplist)
     db.session.add(e)
+    db.session.flush()
     db.session.commit()
+    
     return gdumps(e)
 
 @app.route('/api/events/nearby', methods=['GET'])
-#@auth.login_required
+@auth.login_required
 def get_nearby_events():
     # print(request.args)
     events = Event.query.all()
     d = ','.join(gdumps(e) for e in events)
     d = '['+d+']'
     return d
-    
+
 @app.route('/api/points/nearby', methods=['GET'])
 @auth.login_required
 def get_nearby_points():
@@ -49,7 +65,6 @@ def get_nearby_points():
         abort(400)
     points = Point.query.all()
     return '[' + ','.join(gdumps(p) for p in points) + ']'
-    
 
 @app.route('/api/points', methods=['PUT', 'POST'])
 @auth.login_required
@@ -62,7 +77,7 @@ def points():
 
 def set_points(req):
     plist = []
-    for feature in req:
+    for point in req:
         geom = point['geometry']
         coords = geom['coordinates']
         ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
@@ -121,8 +136,6 @@ def update_event(event_id):
     return gdumps(event)
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
-@auth.login_required
-# This needs to be fixed...
 def set_points_to_event(event_id):
     #r = request.get_json()
     #for feature in r:
@@ -145,7 +158,6 @@ def set_points_to_event(event_id):
     if event in None:
         abort(400)
     return ''
-    
 
 @app.route('/api/users', methods=['POST'])
 def users():
@@ -185,22 +197,6 @@ def verify_password(username, password):
     if not user or not user.check_password(password):
         return False
     return True
-
-def get_or_make_point(feature):
-    pid = feature['id']
-    point = Point.query.filter(Point.pid == pid).first()
-    if point is not None:
-        return point
-    geo = feature['geometry']
-    props = feature['properties']
-    proplist = []
-    for key, value in props.items():
-        proplist.append(PointProp(prop_name=key, prop=value))
-    geo = jdumps(geo)
-    geo = gloads(geo)
-    point = shape(geo)
-    wkt = 'SRID=4326;' + point.wkt
-    return Point(point=wkt, props=proplist)
 
 
 # The following routes are test endpoints!!!
