@@ -12,11 +12,36 @@ from geoalchemy2.elements import WKTElement
 hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
-@app.route('/api/events', methods=['POST'])
+@app.route('/api/events', methods=['PUT', 'POST'])
 @auth.login_required
-def set_event():
-    rjson = request.get_json()
-    features = rjson['features']
+def events():
+    r = request.get_json()
+    if request.method == 'POST':
+        return set_event(r)
+    elif request.method == 'PUT':
+        return update_event(r)
+
+
+def set_event(req):
+    start_point, plist, proplist = extract_features(req['features'])
+    e = Event(start_point=start_point, points=plist, props=proplist)
+    db.session.add(e)
+    db.session.commit()
+    return gdumps(e)
+
+def update_event(req):
+    event_id = req['id']
+    event = Event.query.filter(Event.eid == event_id).first()
+    if event is None:
+        abort(400)
+    start_point, plist, proplist = extract_features(req['features'])
+    e.start_point = start_point
+    e.points = plist
+    e.props = proplist
+    db.session.commit()
+
+
+def extract_features(features):
     plist = []
     start_point = None
     for f in features:
@@ -28,10 +53,7 @@ def set_event():
     proplist = []
     for key, value in props.items():
         proplist.append(EventProp(prop_name=key, prop=value))
-    e = Event(points=plist, start_point=start_point, props=proplist)
-    db.session.add(e)
-    db.session.commit()
-    return gdumps(e)
+    return start_point, plist, proplist
 
 @app.route('/api/events/nearby', methods=['GET'])
 @auth.login_required
@@ -110,7 +132,7 @@ def get_event_by_id(event_id):
 
 @app.route('/api/events/<event_id>/properties', methods=['PUT'])
 @auth.login_required
-def update_event(event_id):
+def update_event_properties(event_id):
     r = request.get_json()
     event = Event.query.filter(Event.eid == event_id).first()
     if event is not None:
@@ -125,30 +147,6 @@ def update_event(event_id):
     else:
         abort(400)
     return gdumps(event)
-
-@app.route('/api/events/<event_id>/points', methods=['POST'])
-def set_points_to_event(event_id):
-    #r = request.get_json()
-    #for feature in r:
-    #    geom = feature['geometry']
-    #    coords = geom['coordinates']
-    #    ewkt = 'Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
-    #    props = []
-    #    for key, value in feature['properties'].items():
-    #        props.append(PointProp(prop_name=key, prop=value))
-    #    p = Point(point=ewkt, eid=event_id, props=props)
-    #    try:
-    #        db.session.add(p)
-    #        db.session.flush()
-    #    except IntegrityError:
-    #        db.session.close()
-    #        abort(400)
-    #db.session.commit()
-    #return ''
-    event = Event.query.filter(Event.eid == event_id).first()
-    if event in None:
-        abort(400)
-    return ''
 
 @app.route('/api/users', methods=['POST'])
 def users():
