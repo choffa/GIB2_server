@@ -22,7 +22,7 @@ class Event(db.Model):
         for p in self.points:
             ps.append(loads(bytes(p.point.data)).wkt)
 
-        return '{}-{}-{}'.format(self.eid, ps, self.props)
+        return 'id: {}\npoints: {}\nproperties: {}'.format(self.eid, ps, self.props)
 
     @property
     def __geo_interface__(self):
