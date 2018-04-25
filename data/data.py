@@ -1,5 +1,5 @@
 from app import db
-from geoalchemy2.types import Geometry
+from geoalchemy2.types import Geography
 from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
@@ -51,7 +51,7 @@ class Point(db.Model):
     __tablename__ = 'points'
     pid = db.Column(db.Integer, primary_key=True)
     props = db.relationship('PointProp')
-    point = db.Column(Geometry(geometry_type='POINT', srid=4326))
+    point = db.Column(Geography(geometry_type='POINT'))
 
     def __repr__(self):
         return '{}-{}'.format(self.pid, self.point)
