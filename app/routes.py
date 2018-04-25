@@ -1,6 +1,6 @@
 from app import app, db, auth
 from flask import jsonify, request, abort
-from data.data import Event, Point, PointProp, EventProp, User
+from data.data import *
 from json import dumps as jdumps
 from geojson import loads as gloads, dumps as gdumps
 from shapely.geometry import shape
@@ -10,10 +10,12 @@ hello_world_data = {'data' : 'HELLO WORLD!'}
 string_list = ["hello", "world", "plzzzz"]
 
 @app.route('/api/events', methods=['POST'])
+@auth.login_required
 def set_event():
     rjson = request.get_json()
     features = rjson['features']
     plist = []
+    start_point = None
     for f in features:
         if f['id'] > 0:
             point = Point.query.filter(Point.pid == f['id']).first()
@@ -45,6 +47,7 @@ def set_event():
     return gdumps(e)
 
 @app.route('/api/events/nearby', methods=['GET'])
+@auth.login_required
 def get_nearby_events():
     # print(request.args)
     events = Event.query.all()
@@ -52,10 +55,20 @@ def get_nearby_events():
     d = '['+d+']'
     return d
 
+@app.route('/api/points/nearby', methods=['GET'])
+@auth.login_required
+def get_nearby_points():
+    lat = request.args.get('lat')
+    lng = request.args.get('lng')
+    dist = request.args.get('dist')
+    if not (lat and lng and dist):
+        abort(400)
+    points = Point.query.all()
+    return '[' + ','.join(gdumps(p) for p in points) + ']'
+
 @app.route('/api/points', methods=['PUT', 'POST'])
 @auth.login_required
 def points():
-    print('Verified?')
     r = request.get_json()
     if request.method == 'POST':
         return set_points(r)
@@ -78,7 +91,6 @@ def set_points(req):
     db.session.commit()
     d = ','.join(gdumps(p) for p in plist)
     d = '[' + d + ']'
-    print(d)
     return d
 
 def update_point(req):
@@ -100,14 +112,15 @@ def update_point(req):
     return gdumps(point)
 
 @app.route('/api/events/<event_id>', methods=['GET'])
+@auth.login_required
 def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
     return gdumps(e)
 
 @app.route('/api/events/<event_id>/properties', methods=['PUT'])
+@auth.login_required
 def update_event(event_id):
     r = request.get_json()
-    print(r)
     event = Event.query.filter(Event.eid == event_id).first()
     if event is not None:
         EventProp.query.filter(EventProp.eid == event_id).delete()
@@ -124,22 +137,59 @@ def update_event(event_id):
 
 @app.route('/api/events/<event_id>/points', methods=['POST'])
 def set_points_to_event(event_id):
-    r = request.get_json()
-    for feature in r:
-        geom = feature['geometry']
-        coords = geom['coordinates']
-        ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
-        props = []
-        for key, value in feature['properties'].items():
-            props.append(PointProp(prop_name=key, prop=value))
-        p = Point(point=ewkt, eid=event_id, props=props)
-        try:
-            db.session.add(p)
-            db.session.flush()
-        except IntegrityError:
-            abort(400)
-    db.session.commit()
+    #r = request.get_json()
+    #for feature in r:
+    #    geom = feature['geometry']
+    #    coords = geom['coordinates']
+    #    ewkt = 'SRID=4326;Point(' + str(coords[0]) + ' ' + str(coords[1]) + ')' 
+    #    props = []
+    #    for key, value in feature['properties'].items():
+    #        props.append(PointProp(prop_name=key, prop=value))
+    #    p = Point(point=ewkt, eid=event_id, props=props)
+    #    try:
+    #        db.session.add(p)
+    #        db.session.flush()
+    #    except IntegrityError:
+    #        db.session.close()
+    #        abort(400)
+    #db.session.commit()
+    #return ''
+    event = Event.query.filter(Event.eid == event_id).first()
+    if event in None:
+        abort(400)
     return ''
+
+@app.route('/api/users', methods=['POST'])
+def users():
+    r = request.get_json()
+    username = r['username']
+    password = r['password']
+    user = User(username, password)
+    try:
+        db.session.add(user)
+        db.session.flush()
+        db.session.commit()
+    except IntegrityError:
+        db.session.close()
+        return 'false'
+    return 'true'
+
+@app.route('/api/login', methods=['POST'])
+@auth.login_required
+def login_user():
+    return jsonify(True)
+
+@app.route('/api/events/<event_id>/time/<time>', methods=['POST'])
+@auth.login_required
+def post_time(event_id, time):
+    times = time.split(':')
+    if len(times) != 3:
+        abort(400)
+    user_id = User.query.filter(User.username == auth.username()).first().uid
+    t = Time(event_id, user_id, times[0], times[1], times[2])
+    db.session.add(t)
+    db.session.commit()
+    return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
 @auth.verify_password
 def verify_password(username, password):
