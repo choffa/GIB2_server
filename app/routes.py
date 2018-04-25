@@ -42,7 +42,7 @@ def get_nearby_events():
     if not (lat and lng and dist):
         abort(400)
     user_point = WKTElement('POINT({} {})'.format(lat, lng))
-    events = Event.query.filter(ST_Distance(Event.start_point.point, user_point) <= dist).all()
+    events = Event.query.join(Point, Event.start_point).filter(ST_Distance(Point.point, user_point) <= dist).all()
     return '[' + ','.join(gdumps(e) for e in events) + ']'
 
 @app.route('/api/points/nearby', methods=['GET'])
