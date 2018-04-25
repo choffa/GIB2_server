@@ -36,11 +36,14 @@ def set_event():
 @app.route('/api/events/nearby', methods=['GET'])
 @auth.login_required
 def get_nearby_events():
-    # print(request.args)
-    events = Event.query.all()
-    d = ','.join(gdumps(e) for e in events)
-    d = '['+d+']'
-    return d
+    lat = request.args.get('lat')
+    lng = request.args.get('lng')
+    dist = request.args.get('dist')
+    if not (lat and lng and dist):
+        abort(400)
+    user_point = WKTElement('POINT({} {})'.format(lat, lng))
+    events = Event.query.filter(ST_Distance(Event.start_point.point, user_point) <= dist).all()
+    return '[' + ','.join(gdumps(e) for e in events) + ']'
 
 @app.route('/api/points/nearby', methods=['GET'])
 @auth.login_required
