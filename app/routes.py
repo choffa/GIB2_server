@@ -52,7 +52,8 @@ def extract_features(features):
     props = rjson['properties']
     proplist = []
     for key, value in props.items():
-        proplist.append(EventProp(prop_name=key, prop=value))
+        if key not in ['avg_time', 'popularity']:
+            proplist.append(EventProp(prop_name=key, prop=value))
     return start_point, plist, proplist
 
 @app.route('/api/events/nearby', methods=['GET'])
@@ -148,8 +149,8 @@ def update_event_properties(event_id):
         abort(400)
     return gdumps(event)
 
-@app.route('/api/users', methods=['POST'])
-def users():
+@app.route('/api/user', methods=['POST'])
+def user():
     r = request.get_json()
     username = r['username']
     password = r['password']
