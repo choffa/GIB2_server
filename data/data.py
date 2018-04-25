@@ -17,11 +17,6 @@ class Event(db.Model):
     points = db.relationship('Point', secondary=association_table)
     props = db.relationship('EventProp')
 
-    # def __init__(self, event_id, *points, **props):
-    #     self.eid = int(event_id)
-    #     self.props = props
-    #     self.points = [p for p in points]
-
     def __repr__(self):
         ps = []
         for p in self.points:
