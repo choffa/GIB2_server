@@ -44,6 +44,7 @@ class Event(db.Model):
         for prop in self.props:
             props[prop.prop_name] = prop.prop
         props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
+        props['popularity'] = Time.query.filter(Time.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
