@@ -182,13 +182,13 @@ def post_time(event_id, time):
     db.session.commit()
     return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
-@app.route('api/user/events', methods=['GET'])
+@app.route('/api/user/events', methods=['GET'])
 @auth.login_required
 def get_my_events():
     user = User.query.filter(User.username == auth.username)
     return '[' + ','.join(gdumps(e) for e in user.saved_events) + ']'
 
-@app.route('api/user/events/<event_id>', methods=['POST', 'DELETE'])
+@app.route('/api/user/events/<event_id>', methods=['POST', 'DELETE'])
 @auth.login_required
 def add_or_remove_my_event(event_id):
     if request.method == 'POST':
