@@ -22,7 +22,7 @@ class Event(db.Model):
         for p in self.points:
             ps.append(loads(bytes(p.point.data)).wkt)
 
-        return '{}-{}-{}'.format(self.eid, ps, self.props)
+        return 'id: {}\npoints: {}\nproperties: {}'.format(self.eid, ps, self.props)
 
     @property
     def __geo_interface__(self):
@@ -44,6 +44,7 @@ class Event(db.Model):
         for prop in self.props:
             props[prop.prop_name] = prop.prop
         props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
+        props['popularity'] = Time.query.filter(Time.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -54,7 +55,7 @@ class Point(db.Model):
     point = db.Column(Geography(geometry_type='POINT'))
 
     def __repr__(self):
-        return '{}-{}'.format(self.pid, self.point)
+        return '{}-{}'.format(self.pid, loads(bytes(self.point.data)).wkt)
 
     @property
     def __geo_interface__(self):
