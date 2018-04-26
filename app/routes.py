@@ -23,7 +23,7 @@ def events():
 
 
 def set_event(req):
-    start_point, plist, proplist = extract_features(req['features'])
+    start_point, plist, proplist = extract_features(req)
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.commit()
@@ -41,7 +41,8 @@ def update_event(req):
     db.session.commit()
 
 
-def extract_features(features):
+def extract_features(req):
+    features = req['features']
     plist = []
     start_point = None
     for f in features:
@@ -49,7 +50,7 @@ def extract_features(features):
             start_point = get_or_make_point(f)
         else:
             plist.append(get_or_make_point(f))
-    props = rjson['properties']
+    props = req['properties']
     proplist = []
     for key, value in props.items():
         if key not in ['avg_time', 'popularity']:
