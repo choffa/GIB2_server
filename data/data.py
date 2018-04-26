@@ -5,16 +5,21 @@ from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
 from datetime import timedelta
 
-association_table = db.Table('event_point', db.metadata, db.Column(('eid'),db.Integer, db.ForeignKey('events.eid')),
+event_point = db.Table('event_point', db.metadata, db.Column('eid', db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
 )
+
+my_events = db.Table('my_events', db.metadata, db.Column(('uid'), db.Integer, db.ForeignKey('users.uid')), 
+    db.Column('eid', db.Integer, db.ForeignKey('points.pid'))
+)
+
 
 class Event(db.Model):
     __tablename__ = 'events'
     eid = db.Column(db.Integer, primary_key=True)
     start_point_id = db.Column(db.Integer, db.ForeignKey('points.pid'), nullable=False)
     start_point = db.relationship('Point')
-    points = db.relationship('Point', secondary=association_table)
+    points = db.relationship('Point', secondary=event_point)
     props = db.relationship('EventProp')
 
     def __repr__(self):
@@ -91,6 +96,7 @@ class User(db.Model):
     uid = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String, unique=True)
     pw_hash = db.Column(db.String)
+    saved_events = db.relationship('Event', secondary='my_events')
 
     def __init__(self, username, password):
         self.username = username
