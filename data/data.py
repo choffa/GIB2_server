@@ -4,6 +4,7 @@ from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
 from datetime import timedelta
+from sqlalchemy.sql import func
 
 event_point = db.Table('event_point', db.metadata, db.Column('eid', db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -48,8 +49,9 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
-        props['popularity'] = Time.query.filter(Time.eid == self.eid).count()
+        props['avg_time'] = EventStats.calc_average_time(self.eid)
+        props['avg_score'] = EventStats.calc_average_score(self.eid)
+        props['popularity'] = EventStats.query.filter(Time.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -127,8 +129,8 @@ class Time(db.Model):
 class EventStats(db.Model):
     __tablename__ = 'event_stats'
     sid = db.Column(db.Integer, primary_key=True)
-    uid = db.Column(db.Integer, db.ForeignKey('User.uid'), index=True)
-    eid = db.Column(db.Integer, db.ForeignKey('Event.eid'), index=True)
+    uid = db.Column(db.Integer, db.ForeignKey('users.uid'), index=True)
+    eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
     seconds_used = db.Column(db.Integer)
     score = db.Column(db.Integer)
 
