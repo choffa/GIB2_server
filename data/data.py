@@ -6,7 +6,7 @@ from werkzeug.security import generate_password_hash as gph, check_password_hash
 from datetime import timedelta
 
 event_point = db.Table('event_point', db.metadata, db.Column('eid', db.Integer, db.ForeignKey('events.eid')),
-    db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
+    db.Column('pid', db.Integer, db.ForeignKey('events.eid'))
 )
 
 my_events = db.Table('my_events', db.metadata, db.Column(('uid'), db.Integer, db.ForeignKey('users.uid')), 
