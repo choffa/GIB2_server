@@ -107,25 +107,6 @@ class User(db.Model):
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
 
-class Time(db.Model):
-    __tablename__ = 'time'
-    did = db.Column(db.Integer, primary_key=True)
-    eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
-    uid = db.Column(db.Integer, db.ForeignKey('users.uid'))
-    seconds = db.Column(db.Integer)
-
-    def __init__(self, eid, uid, hours=0, minutes=0, seconds=0):
-        self.eid = eid
-        self.uid = uid
-        self.seconds = hours*3600 + minutes*60 + seconds
-
-    @staticmethod
-    def calc_average_time(event_id):
-        seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
-        if not len(seconds):
-            return 0
-        return round(sum(seconds)/len(seconds))
-
 class EventStats(db.Model):
     __tablename__ = 'event_stats'
     sid = db.Column(db.Integer, primary_key=True)
@@ -161,23 +142,3 @@ class EventStats(db.Model):
         except TypeError:
             avg_score = 0
         return avg_score
-
-
-class DeltaTime():
-    
-    def __init__(self, hours=0, minutes=0, seconds=0):
-        hours += seconds // 3600
-        seconds = seconds % 3600
-        minutes += seconds // 60
-        seconds = seconds % 60
-
-        hours += minutes // 60
-        minutes = minutes % 60
-
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
-    
-    def __repr__(self):
-        return '{:02d}:{:02d}:{:02d}'.format(self.hours, self.minutes, self.seconds)
-
