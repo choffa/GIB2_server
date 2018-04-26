@@ -181,6 +181,25 @@ def post_time(event_id, time):
     db.session.commit()
     return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
+@app.route('api/user/events', methods=['GET'])
+@auth.login_required
+def get_my_events():
+    pass
+
+@app.route('api/user/events/<event_id>', methods=['POST', 'DELETE'])
+@auth.login_required
+def add_or_remove_my_event(event_id):
+    if request.method == 'POST':
+        add_my_event(event_id)
+    elif request.method == 'DELETE':
+        remove_my_event(event_id)
+
+def add_my_event(eid):
+    pass
+
+def remove_my_event(eid):
+    pass
+
 @app.route('/')
 def hello_world():
     return jsonify(string_list)
