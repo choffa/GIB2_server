@@ -180,6 +180,16 @@ def add_or_remove_my_event(event_id):
     elif request.method == 'DELETE':
         return remove_my_event(event_id)
 
+@app.route('/api/events/<event_id>/finish', methods=['POST'])
+@auth.login_required
+def finish_event(event_id):
+    uid = User.query.filter(User.username == auth.username).with_entities(User.uid).scalar()
+    time = request.args.get('time') or '00:00:00'
+    h, m, s = time.split(':')
+    event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s)
+    db.session.add(event_stat)
+    db.session.commit()
+
 def add_my_event(eid):
     user = User.query.filter(User.username == auth.username).first()
     e = Event.query.get(eid)
@@ -196,6 +206,7 @@ def remove_my_event(eid):
 
 @app.route('/')
 def hello_world():
+    print(request.args.get('test'))
     return jsonify(string_list)
 
 @auth.verify_password

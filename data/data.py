@@ -107,7 +107,7 @@ class User(db.Model):
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
 
-class EventStats(db.Model):
+class EventStat(db.Model):
     __tablename__ = 'event_stats'
     sid = db.Column(db.Integer, primary_key=True)
     uid = db.Column(db.Integer, db.ForeignKey('users.uid'), index=True)
