@@ -51,7 +51,7 @@ class Event(db.Model):
             props[prop.prop_name] = prop.prop
         props['avg_time'] = EventStat.calc_average_time(self.eid)
         props['avg_score'] = EventStat.calc_average_score(self.eid)
-        props['popularity'] = EventStat.query.filter(Time.eid == self.eid).count()
+        props['popularity'] = EventStat.query.filter(EventStat.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
