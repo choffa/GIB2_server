@@ -4,6 +4,7 @@ from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
 from datetime import timedelta
+from sqlalchemy.sql import func
 
 event_point = db.Table('event_point', db.metadata, db.Column('eid', db.Integer, db.ForeignKey('events.eid')),
     db.Column('pid', db.Integer, db.ForeignKey('points.pid'))
@@ -48,8 +49,9 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = str(DeltaTime(seconds=Time.calc_average_time(self.eid)))
-        props['popularity'] = Time.query.filter(Time.eid == self.eid).count()
+        props['avg_time'] = EventStats.calc_average_time(self.eid)
+        props['avg_score'] = EventStats.calc_average_score(self.eid)
+        props['popularity'] = EventStats.query.filter(Time.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -94,51 +96,49 @@ class EventProp(db.Model):
 class User(db.Model):
     __tablename__ = 'users'
     uid = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True)
+    username = db.Column(db.String, unique=True, index=True)
     pw_hash = db.Column(db.String)
     saved_events = db.relationship('Event', secondary='my_events')
 
     def __init__(self, username, password):
-        self.username = username
+        self.username = username.lower()
         self.pw_hash = gph(password)
     
     def check_password(self, candidate):
         return cph(self.pw_hash, candidate)
 
-class Time(db.Model):
-    __tablename__ = 'time'
-    did = db.Column(db.Integer, primary_key=True)
+class EventStat(db.Model):
+    __tablename__ = 'event_stats'
+    sid = db.Column(db.Integer, primary_key=True)
+    uid = db.Column(db.Integer, db.ForeignKey('users.uid'), index=True)
     eid = db.Column(db.Integer, db.ForeignKey('events.eid'), index=True)
-    uid = db.Column(db.Integer, db.ForeignKey('users.uid'))
-    seconds = db.Column(db.Integer)
+    seconds_used = db.Column(db.Integer)
+    score = db.Column(db.Integer)
 
-    def __init__(self, eid, uid, hours=0, minutes=0, seconds=0):
-        self.eid = eid
+    def __init__(self, uid, eid, hours=0, minutes=0, seconds=0, score=0):
         self.uid = uid
-        self.seconds = hours*3600 + minutes*60 + seconds
-
+        self.eid = eid
+        self.seconds_used = hours * 3600 + minutes * 60 + seconds
+        self.score = score
+    
     @staticmethod
     def calc_average_time(event_id):
-        seconds = [f.seconds for f in Time.query.filter(Time.eid == event_id).all()]
-        if not len(seconds):
-            return 0
-        return round(sum(seconds)/len(seconds))
+        try:
+            seconds = round(db.session.query(func.avg(EventStats.seconds_used)).filter(EventStats.eid == event_id).scalar())
+        except TypeError:
+            seconds = 0
 
-class DeltaTime():
-    
-    def __init__(self, hours=0, minutes=0, seconds=0):
-        hours += seconds // 3600
+        hours = seconds // 3600
         seconds = seconds % 3600
-        minutes += seconds // 60
+        minutes = seconds // 60
         seconds = seconds % 60
 
-        hours += minutes // 60
-        minutes = minutes % 60
-
-        self.hours = hours
-        self.minutes = minutes
-        self.seconds = seconds
+        return '{:02d}:{:02d}:{:02d}'.format(hours, minutes, seconds)
     
-    def __repr__(self):
-        return '{:02d}:{:02d}:{:02d}'.format(self.hours, self.minutes, self.seconds)
-
+    @staticmethod
+    def calc_average_score(event_id):
+        try:
+            avg_score = float(db.session.query(func.avg(EventStats.score)).filter(EventStats.eid == event_id).scalar)
+        except TypeError:
+            avg_score = 0
+        return avg_score

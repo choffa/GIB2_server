@@ -53,7 +53,7 @@ def extract_features(req):
     props = req['properties']
     proplist = []
     for key, value in props.items():
-        if key not in ['avg_time', 'popularity']:
+        if key not in ['avg_time', 'avg_score', 'popularity']:
             proplist.append(EventProp(prop_name=key, prop=value))
     return start_point, plist, proplist
 
@@ -132,24 +132,6 @@ def get_event_by_id(event_id):
     e = Event.query.filter(Event.eid == event_id).first()
     return gdumps(e)
 
-@app.route('/api/events/<event_id>/properties', methods=['PUT'])
-@auth.login_required
-def update_event_properties(event_id):
-    r = request.get_json()
-    event = Event.query.filter(Event.eid == event_id).first()
-    if event is not None:
-        EventProp.query.filter(EventProp.eid == event_id).delete()
-        proplist = []
-        for key, value in r.items():
-            prop = EventProp(prop_name=key, prop=value)
-            proplist.append(prop)
-        event.props = proplist
-        db.session.flush()
-        db.session.commit()
-    else:
-        abort(400)
-    return gdumps(event)
-
 @app.route('/api/user', methods=['POST'])
 def user():
     r = request.get_json()
@@ -182,6 +164,8 @@ def post_time(event_id, time):
     db.session.commit()
     return gdumps(Event.query.filter(Event.eid == event_id).first()) 
 
+
+
 @app.route('/api/user/events', methods=['GET'])
 @auth.login_required
 def get_my_events():
@@ -195,6 +179,16 @@ def add_or_remove_my_event(event_id):
         return add_my_event(event_id)
     elif request.method == 'DELETE':
         return remove_my_event(event_id)
+
+@app.route('/api/events/<event_id>/finish', methods=['POST'])
+@auth.login_required
+def finish_event(event_id):
+    uid = User.query.filter(User.username == auth.username).with_entities(User.uid).scalar()
+    time = request.args.get('time') or '00:00:00'
+    h, m, s = time.split(':')
+    event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s)
+    db.session.add(event_stat)
+    db.session.commit()
 
 def add_my_event(eid):
     user = User.query.filter(User.username == auth.username).first()
@@ -212,11 +206,12 @@ def remove_my_event(eid):
 
 @app.route('/')
 def hello_world():
+    print(request.args.get('test'))
     return jsonify(string_list)
 
 @auth.verify_password
 def verify_password(username, password):
-    user = User.query.filter(User.username == username).first()
+    user = User.query.filter(User.username == username.lower()).first()
     if not user or not user.check_password(password):
         return False
     return True
