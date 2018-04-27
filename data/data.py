@@ -49,9 +49,9 @@ class Event(db.Model):
         props = {}
         for prop in self.props:
             props[prop.prop_name] = prop.prop
-        props['avg_time'] = EventStats.calc_average_time(self.eid)
-        props['avg_score'] = EventStats.calc_average_score(self.eid)
-        props['popularity'] = EventStats.query.filter(Time.eid == self.eid).count()
+        props['avg_time'] = EventStat.calc_average_time(self.eid)
+        props['avg_score'] = EventStat.calc_average_score(self.eid)
+        props['popularity'] = EventStat.query.filter(Time.eid == self.eid).count()
         return {'type': 'FeatureCollection', 'id': self.eid, 'features': features, 'properties': props}
         
         
@@ -124,7 +124,7 @@ class EventStat(db.Model):
     @staticmethod
     def calc_average_time(event_id):
         try:
-            seconds = round(db.session.query(func.avg(EventStats.seconds_used)).filter(EventStats.eid == event_id).scalar())
+            seconds = round(db.session.query(func.avg(EventStat.seconds_used)).filter(EventStat.eid == event_id).scalar())
         except TypeError:
             seconds = 0
 
@@ -138,7 +138,7 @@ class EventStat(db.Model):
     @staticmethod
     def calc_average_score(event_id):
         try:
-            avg_score = float(db.session.query(func.avg(EventStats.score)).filter(EventStats.eid == event_id).scalar)
+            avg_score = float(db.session.query(func.avg(EventStat.score)).filter(EventStat.eid == event_id).scalar)
         except TypeError:
             avg_score = 0
         return avg_score
