@@ -158,7 +158,7 @@ def post_time(event_id, time):
     times = time.split(':')
     if len(times) != 3:
         abort(400)
-    user_id = User.query.filter(User.username == auth.username()).first().uid
+    user_id = User.query.filter(User.username == auth.username().lower()).first().uid
     t = Time(event_id, user_id, times[0], times[1], times[2])
     db.session.add(t)
     db.session.commit()
@@ -169,7 +169,7 @@ def post_time(event_id, time):
 @app.route('/api/user/events', methods=['GET'])
 @auth.login_required
 def get_my_events():
-    user = User.query.filter(User.username == auth.username)
+    user = User.query.filter(User.username == auth.username().lower())
     return '[' + ','.join(gdumps(e) for e in user.saved_events) + ']'
 
 @app.route('/api/user/events/<event_id>', methods=['POST', 'DELETE'])
@@ -183,7 +183,7 @@ def add_or_remove_my_event(event_id):
 @app.route('/api/events/<event_id>/finish', methods=['POST'])
 @auth.login_required
 def finish_event(event_id):
-    uid = User.query.filter(User.username == auth.username).with_entities(User.uid).scalar()
+    uid = User.query.filter(User.username == auth.username().lower()).with_entities(User.uid).scalar()
     time = request.args.get('time') or '00:00:00'
     h, m, s = time.split(':')
     event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s)
@@ -191,14 +191,14 @@ def finish_event(event_id):
     db.session.commit()
 
 def add_my_event(eid):
-    user = User.query.filter(User.username == auth.username).first()
+    user = User.query.filter(User.username == auth.username().lower()).first()
     e = Event.query.get(eid)
     user.saved_events.append(e)
     db.session.commit()
     return '[' + ','.join(gdumps(e) for e in user.saved_events) + ']'
 
 def remove_my_event(eid):
-    user = User.query.filter(User.username == auth.username).first()
+    user = User.query.filter(User.username == auth.username().lower()).first()
     e = Event.query.get(eid)
     user.saved_events.remove(e)
     db.session.commit()
