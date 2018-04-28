@@ -189,6 +189,8 @@ def finish_event(event_id):
     event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s)
     db.session.add(event_stat)
     db.session.commit()
+    e = Event.query.get(event_id)
+    return gdumps(e)
 
 def add_my_event(eid):
     user = User.query.filter(User.username == auth.username().lower()).first()
