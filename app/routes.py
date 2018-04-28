@@ -169,7 +169,7 @@ def post_time(event_id, time):
 @app.route('/api/user/events', methods=['GET'])
 @auth.login_required
 def get_my_events():
-    user = User.query.filter(User.username == auth.username().lower())
+    user = User.query.filter(User.username == auth.username().lower()).first()
     return '[' + ','.join(gdumps(e) for e in user.saved_events) + ']'
 
 @app.route('/api/user/events/<event_id>', methods=['POST', 'DELETE'])
