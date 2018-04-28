@@ -185,8 +185,9 @@ def add_or_remove_my_event(event_id):
 def finish_event(event_id):
     uid = User.query.filter(User.username == auth.username().lower()).with_entities(User.uid).scalar()
     time = request.args.get('time') or '00:00:00'
+    score = request.args.get('score')
     h, m, s = time.split(':')
-    event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s)
+    event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s, score=score)
     db.session.add(event_stat)
     db.session.commit()
     e = Event.query.get(event_id)
