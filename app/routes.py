@@ -27,6 +27,9 @@ def set_event(req):
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.commit()
+    print(e.start_point)
+    for p in e.points:
+        print(p)
     return gdumps(e)
 
 def update_event(req):
@@ -65,7 +68,7 @@ def get_nearby_events():
     dist = request.args.get('dist')
     if not (lat and lng and dist):
         abort(400)
-    user_point = WKTElement('POINT({} {})'.format(lat, lng))
+    user_point = WKTElement('POINT({} {})'.format(lng, lat))
     events = Event.query.join(Point, Event.start_point).filter(ST_Distance(Point.point, user_point) <= dist).all()
     return '[' + ','.join(gdumps(e) for e in events) + ']'
 
@@ -77,7 +80,7 @@ def get_nearby_points():
     dist = request.args.get('dist')
     if not (lat and lng and dist):
         abort(400)
-    user_point = WKTElement('POINT({} {})'.format(lat, lng))
+    user_point = WKTElement('POINT({} {})'.format(lng, lat))
     points = Point.query.filter(ST_Distance(Point.point, user_point) <= dist).all()
     return '[' + ','.join(gdumps(p) for p in points) + ']'
 
@@ -225,11 +228,15 @@ def get_or_make_point(feature):
     if point is not None:
         return point
     geo = feature['geometry']
+    print('1: ' + str(geo))
     props = feature['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(PointProp(prop_name=key, prop=value))
     geo = jdumps(geo)
+    print('2: ' + str(geo))
     geo = gloads(geo)
+    print('3: ' + str(geo))
     point = shape(geo)
+    print(point.wkt)
     return Point(point=point.wkt, props=proplist)
