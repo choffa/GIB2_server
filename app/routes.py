@@ -61,7 +61,6 @@ def extract_features(req):
     return start_point, plist, proplist
 
 @app.route('/api/events/nearby', methods=['GET'])
-@auth.login_required
 def get_nearby_events():
     lat = request.args.get('lat')
     lng = request.args.get('lng')
@@ -155,19 +154,6 @@ def user():
 def login_user():
     return jsonify(True)
 
-@app.route('/api/events/<event_id>/time/<time>', methods=['POST'])
-@auth.login_required
-def post_time(event_id, time):
-    times = time.split(':')
-    if len(times) != 3:
-        abort(400)
-    user_id = User.query.filter(User.username == auth.username().lower()).first().uid
-    t = Time(event_id, user_id, times[0], times[1], times[2])
-    db.session.add(t)
-    db.session.commit()
-    return gdumps(Event.query.filter(Event.eid == event_id).first()) 
-
-
 
 @app.route('/api/user/events', methods=['GET'])
 @auth.login_required
@@ -184,7 +170,6 @@ def add_or_remove_my_event(event_id):
         return remove_my_event(event_id)
 
 @app.route('/api/events/<event_id>/finish', methods=['POST'])
-@auth.login_required
 def finish_event(event_id):
     uid = User.query.filter(User.username == auth.username().lower()).with_entities(User.uid).scalar()
     time = request.args.get('time') or '00:00:00'
