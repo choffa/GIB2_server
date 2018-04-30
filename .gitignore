@@ -103,3 +103,5 @@ ENV/
 # VSCode
 .vscode/
 data/event.json
+
+test_db.py
