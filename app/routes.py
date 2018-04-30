@@ -137,7 +137,7 @@ def get_event_by_id(event_id):
 @app.route('/api/user', methods=['POST'])
 def user():
     r = request.get_json()
-    username = r['username']
+    username = r['username'].lower()
     password = r['password']
     user = User(username, password)
     try:
