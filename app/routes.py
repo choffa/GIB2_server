@@ -173,9 +173,11 @@ def add_or_remove_my_event(event_id):
 def finish_event(event_id):
     uid = User.query.filter(User.username == auth.username().lower()).with_entities(User.uid).scalar()
     time = request.args.get('time') or '00:00:00'
+    print(time)
     score = request.args.get('score')
     h, m, s = time.split(':')
     event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s, score=score)
+    print(event_stat)
     db.session.add(event_stat)
     db.session.commit()
     e = Event.query.get(event_id)
@@ -213,15 +215,11 @@ def get_or_make_point(feature):
     if point is not None:
         return point
     geo = feature['geometry']
-    print('1: ' + str(geo))
     props = feature['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(PointProp(prop_name=key, prop=value))
     geo = jdumps(geo)
-    print('2: ' + str(geo))
     geo = gloads(geo)
-    print('3: ' + str(geo))
     point = shape(geo)
-    print(point.wkt)
     return Point(point=point.wkt, props=proplist)

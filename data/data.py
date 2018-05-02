@@ -142,3 +142,6 @@ class EventStat(db.Model):
         except TypeError:
             avg_score = 0
         return avg_score
+    
+    def __repr__(self):
+        return 'sid: {}\nuid: {}\n eid: {}\nsecs: {}\nscore: {}'.format(self.sid, self.uid, self.eid, self.seconds_used, self.score)
