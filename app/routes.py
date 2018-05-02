@@ -26,9 +26,6 @@ def set_event(req):
     e = Event(start_point=start_point, points=plist, props=proplist)
     db.session.add(e)
     db.session.commit()
-    print(e.start_point)
-    for p in e.points:
-        print(p)
     return gdumps(e)
 
 def update_event(req):
@@ -196,7 +193,6 @@ def remove_my_event(eid):
 
 @app.route('/')
 def hello_world():
-    print(request.args.get('test'))
     return jsonify(string_list)
 
 @auth.verify_password
