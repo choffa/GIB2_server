@@ -3,7 +3,6 @@ from flask import jsonify, request, abort
 from data.data import *
 from json import dumps as jdumps
 from geojson import loads as gloads, dumps as gdumps
-from shapely.geometry import shape
 from sqlalchemy.exc import IntegrityError
 from geoalchemy2.functions import ST_Distance
 from geoalchemy2.types import Geography
@@ -173,11 +172,9 @@ def add_or_remove_my_event(event_id):
 def finish_event(event_id):
     uid = User.query.filter(User.username == auth.username().lower()).with_entities(User.uid).scalar()
     time = request.args.get('time') or '00:00:00'
-    print(time)
     score = request.args.get('score')
-    h, m, s = time.split(':')
+    h, m, s = map(int, time.split(':'))
     event_stat = EventStat(uid, event_id, hours=h, minutes=m, seconds=s, score=score)
-    print(event_stat)
     db.session.add(event_stat)
     db.session.commit()
     e = Event.query.get(event_id)
@@ -214,12 +211,10 @@ def get_or_make_point(feature):
     point = Point.query.filter(Point.pid == pid).first()
     if point is not None:
         return point
-    geo = feature['geometry']
+    coords = feature['geometry']['coordinates']
     props = feature['properties']
     proplist = []
     for key, value in props.items():
         proplist.append(PointProp(prop_name=key, prop=value))
-    geo = jdumps(geo)
-    geo = gloads(geo)
-    point = shape(geo)
+    wkt = 'POINT({} {})'.format(coords[0], coords[1])
     return Point(point=point.wkt, props=proplist)
