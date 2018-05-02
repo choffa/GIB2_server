@@ -1,9 +1,8 @@
 from app import db
 from geoalchemy2.types import Geography
-from geojson import Feature, Point as GPoint, FeatureCollection, dump as gdump
+from geojson import Feature
 from shapely.wkb import loads
 from werkzeug.security import generate_password_hash as gph, check_password_hash as cph
-from datetime import timedelta
 from sqlalchemy.sql import func
 
 event_point = db.Table('event_point', db.metadata, db.Column('eid', db.Integer, db.ForeignKey('events.eid')),

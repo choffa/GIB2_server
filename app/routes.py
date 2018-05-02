@@ -1,11 +1,9 @@
 from app import app, db, auth
 from flask import jsonify, request, abort
 from data.data import *
-from json import dumps as jdumps
-from geojson import loads as gloads, dumps as gdumps
+from geojson import dumps as gdumps
 from sqlalchemy.exc import IntegrityError
 from geoalchemy2.functions import ST_Distance
-from geoalchemy2.types import Geography
 from geoalchemy2.elements import WKTElement
 
 hello_world_data = {'data' : 'HELLO WORLD!'}
