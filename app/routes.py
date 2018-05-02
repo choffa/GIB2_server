@@ -217,4 +217,4 @@ def get_or_make_point(feature):
     for key, value in props.items():
         proplist.append(PointProp(prop_name=key, prop=value))
     wkt = 'POINT({} {})'.format(coords[0], coords[1])
-    return Point(point=point.wkt, props=proplist)
+    return Point(point=wkt, props=proplist)
